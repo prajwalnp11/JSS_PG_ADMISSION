@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'form_wizard_screen.dart';
+import 'phone_verification_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -42,8 +42,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -159,7 +157,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
-                      "Autonomous • Re-accredited by NAAC with 'A' Grade",
+                      "Autonomous • Re-accredited by NAAC with 'A+' Grade",
                       style: TextStyle(
                         color: Colors.white,
                         fontSize: 11,
@@ -282,7 +280,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const FormWizardScreen(),
+                                  builder: (context) => const PhoneVerificationScreen(),
                                 ),
                               );
                             },

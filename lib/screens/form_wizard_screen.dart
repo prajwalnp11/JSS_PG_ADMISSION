@@ -6,7 +6,8 @@ import '../models/admission_form.dart';
 import '../services/api_service.dart';
 
 class FormWizardScreen extends StatefulWidget {
-  const FormWizardScreen({super.key});
+  final String? verifiedMobileNumber;
+  const FormWizardScreen({super.key, this.verifiedMobileNumber});
 
   @override
   State<FormWizardScreen> createState() => _FormWizardScreenState();
@@ -49,6 +50,9 @@ class _FormWizardScreenState extends State<FormWizardScreen> {
   void initState() {
     super.initState();
     _initMarksControllers();
+    if (widget.verifiedMobileNumber != null) {
+      _mobileCtrl.text = widget.verifiedMobileNumber!;
+    }
   }
 
   void _initMarksControllers() {
@@ -173,7 +177,7 @@ class _FormWizardScreenState extends State<FormWizardScreen> {
       
       _aadhaarCtrl.text = "564738291012";
       _phoneCtrl.text = "08212411234";
-      _mobileCtrl.text = "9876543210";
+      _mobileCtrl.text = widget.verifiedMobileNumber ?? "9876543210";
       _emailCtrl.text = "prajwal.np@example.com";
       
       _lastInstCtrl.text = "JSS College of Arts, Commerce and Science, Mysuru";
@@ -891,10 +895,15 @@ class _FormWizardScreenState extends State<FormWizardScreen> {
                   child: TextFormField(
                     controller: _mobileCtrl,
                     keyboardType: TextInputType.phone,
-                    decoration: const InputDecoration(
+                    readOnly: widget.verifiedMobileNumber != null,
+                    decoration: InputDecoration(
                       labelText: "Mobile Number *",
-                      border: OutlineInputBorder(),
-                      prefixIcon: Icon(Icons.phone_android),
+                      border: const OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.phone_android),
+                      helperText: widget.verifiedMobileNumber != null ? "Verified Mobile Number" : null,
+                      helperStyle: widget.verifiedMobileNumber != null 
+                          ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold) 
+                          : null,
                     ),
                   ),
                 ),

@@ -1,10 +1,94 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/admission_form.dart';
-
 class ApiService {
   // Replace this URL with your real Google Apps Script web app URL after deployment.
-  static const String apiUrl = 'https://script.google.com/macros/s/AKfycbzIwjlL6o3ENpEqeNPPguyWgI5uRYrH8jZ_jWzx60uz2MR5nzpCsFJUX7lMfEPxMaj6Rg/exec';
+  static const String apiUrl = 'https://script.google.com/macros/s/AKfycbzEI0_nFT-zLAQhvkfw6DPKTRsuRHKtM0-_QH0SAZfx4mzWEUOZXbNfiyDLYNtlrqFMpg/exec';
+
+  // In-memory store for mock OTPs during development
+  static String? _mockOtp;
+
+  /// Requests an OTP for a phone number from the Google Apps Script backend.
+  static Future<Map<String, dynamic>> sendOtp(String phoneNumber) async {
+    if (apiUrl == 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE' || apiUrl.isEmpty) {
+      await Future.delayed(const Duration(milliseconds: 800));
+      _mockOtp = '123456';
+      return {
+        'status': 'success',
+        'otp': _mockOtp,
+        'message': 'Mock Mode: OTP is 123456.'
+      };
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'text/plain'},
+        body: jsonEncode({
+          'action': 'sendOtp',
+          'mobileNo': phoneNumber,
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return {
+          'status': 'error',
+          'message': 'Failed to send OTP. Server responded with status code: ${response.statusCode}'
+        };
+      }
+    } catch (e) {
+      return {
+        'status': 'error',
+        'message': 'Network connection failed: ${e.toString()}'
+      };
+    }
+  }
+
+  /// Verifies the OTP for a phone number with the Google Apps Script backend.
+  static Future<Map<String, dynamic>> verifyOtp(String phoneNumber, String otp) async {
+    if (apiUrl == 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE' || apiUrl.isEmpty) {
+      await Future.delayed(const Duration(milliseconds: 600));
+      if (otp == '123456') {
+        return {
+          'status': 'success',
+          'message': 'Mock OTP verified successfully.'
+        };
+      } else {
+        return {
+          'status': 'error',
+          'message': 'Invalid verification code. Please enter 123456 for testing.'
+        };
+      }
+    }
+
+    try {
+      final response = await http.post(
+        Uri.parse(apiUrl),
+        headers: {'Content-Type': 'text/plain'},
+        body: jsonEncode({
+          'action': 'verifyOtp',
+          'mobileNo': phoneNumber,
+          'otp': otp,
+        }),
+      ).timeout(const Duration(seconds: 30));
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return {
+          'status': 'error',
+          'message': 'Verification failed. Server responded with status code: ${response.statusCode}'
+        };
+      }
+    } catch (e) {
+      return {
+        'status': 'error',
+        'message': 'Network connection failed: ${e.toString()}'
+      };
+    }
+  }
 
   /// Submits the PG admission form to the Google Apps Script backend.
   /// 

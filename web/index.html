@@ -31,18 +31,7 @@
 
   <title>pg_admission_app</title>
   <link rel="manifest" href="manifest.json">
-  <script>
-    // Service Worker Cache Buster: Unregisters any active service worker to force a clean, uncached reload
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(function(registrations) {
-        if (registrations.length > 0) {
-          Promise.all(registrations.map(r => r.unregister())).then(() => {
-            window.location.reload();
-          });
-        }
-      });
-    }
-  </script>
+
 </head>
 <body>
   <!--

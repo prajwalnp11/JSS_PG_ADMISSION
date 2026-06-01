@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'phone_verification_screen.dart';
+import 'email_verification_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -280,7 +280,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (context) => const PhoneVerificationScreen(),
+                                  builder: (context) => const EmailVerificationScreen(),
                                 ),
                               );
                             },

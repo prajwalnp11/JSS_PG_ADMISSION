@@ -3,13 +3,13 @@ import 'package:http/http.dart' as http;
 import '../models/admission_form.dart';
 class ApiService {
   // Replace this URL with your real Google Apps Script web app URL after deployment.
-  static const String apiUrl = 'https://script.google.com/macros/s/AKfycbzEI0_nFT-zLAQhvkfw6DPKTRsuRHKtM0-_QH0SAZfx4mzWEUOZXbNfiyDLYNtlrqFMpg/exec';
+  static const String apiUrl = 'https://script.google.com/macros/s/AKfycby261cqU8Tl8Dn34IIT0JB1TEmnnIyCSMqjuJry-KgcVYhPWUUoxyte34z0Zg_ylXxI/exec';
 
   // In-memory store for mock OTPs during development
   static String? _mockOtp;
 
-  /// Requests an OTP for a phone number from the Google Apps Script backend.
-  static Future<Map<String, dynamic>> sendOtp(String phoneNumber) async {
+  /// Requests an OTP for an email address from the Google Apps Script backend.
+  static Future<Map<String, dynamic>> sendOtp(String email) async {
     if (apiUrl == 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE' || apiUrl.isEmpty) {
       await Future.delayed(const Duration(milliseconds: 800));
       _mockOtp = '123456';
@@ -26,7 +26,7 @@ class ApiService {
         headers: {'Content-Type': 'text/plain'},
         body: jsonEncode({
           'action': 'sendOtp',
-          'mobileNo': phoneNumber,
+          'email': email,
         }),
       ).timeout(const Duration(seconds: 30));
 
@@ -46,8 +46,8 @@ class ApiService {
     }
   }
 
-  /// Verifies the OTP for a phone number with the Google Apps Script backend.
-  static Future<Map<String, dynamic>> verifyOtp(String phoneNumber, String otp) async {
+  /// Verifies the OTP for an email address with the Google Apps Script backend.
+  static Future<Map<String, dynamic>> verifyOtp(String email, String otp) async {
     if (apiUrl == 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE' || apiUrl.isEmpty) {
       await Future.delayed(const Duration(milliseconds: 600));
       if (otp == '123456') {
@@ -69,7 +69,7 @@ class ApiService {
         headers: {'Content-Type': 'text/plain'},
         body: jsonEncode({
           'action': 'verifyOtp',
-          'mobileNo': phoneNumber,
+          'email': email,
           'otp': otp,
         }),
       ).timeout(const Duration(seconds: 30));

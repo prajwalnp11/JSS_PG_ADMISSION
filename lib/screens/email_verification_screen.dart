@@ -4,15 +4,15 @@ import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import 'form_wizard_screen.dart';
 
-class PhoneVerificationScreen extends StatefulWidget {
-  const PhoneVerificationScreen({super.key});
+class EmailVerificationScreen extends StatefulWidget {
+  const EmailVerificationScreen({super.key});
 
   @override
-  State<PhoneVerificationScreen> createState() => _PhoneVerificationScreenState();
+  State<EmailVerificationScreen> createState() => _EmailVerificationScreenState();
 }
 
-class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
-  final _phoneController = TextEditingController();
+class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
+  final _emailController = TextEditingController();
   final _otpController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
@@ -26,7 +26,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
+    _emailController.dispose();
     _otpController.dispose();
     _timer?.cancel();
     super.dispose();
@@ -55,14 +55,14 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   Future<void> _sendOtp() async {
     if (!_formKey.currentState!.validate()) return;
 
-    final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
 
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final res = await ApiService.sendOtp(phone);
+      final res = await ApiService.sendOtp(email);
       setState(() {
         _isLoading = false;
       });
@@ -73,25 +73,16 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
         });
         _startTimer();
         
-        // Show mock OTP code in a SnackBar for easier developer testing
-        final devCode = res['otp'];
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('OTP sent successfully! [Dev Mock Code: $devCode or 123456]'),
-            backgroundColor: const Color(0xFF0D47A1),
-            duration: const Duration(seconds: 8),
-            action: SnackBarAction(
-              label: 'Copy Code',
-              textColor: Colors.amber,
-              onPressed: () {
-                Clipboard.setData(ClipboardData(text: devCode ?? ''));
-              },
-            ),
+          const SnackBar(
+            content: Text('Verification code sent successfully! Please check your email inbox.'),
+            backgroundColor: Color(0xFF0D47A1),
+            duration: Duration(seconds: 6),
           ),
         );
       } else {
-        _showError(res['message'] ?? 'Failed to send OTP.');
+        _showError(res['message'] ?? 'Failed to send verification code.');
       }
     } catch (e) {
       setState(() {
@@ -102,7 +93,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
   }
 
   Future<void> _verifyOtp() async {
-    final phone = _phoneController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
     final otp = _otpController.text.trim();
 
     if (otp.length != 6) {
@@ -115,7 +106,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
     });
 
     try {
-      final res = await ApiService.verifyOtp(phone, otp);
+      final res = await ApiService.verifyOtp(email, otp);
       setState(() {
         _isLoading = false;
       });
@@ -123,12 +114,12 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
       if (res['status'] == 'success') {
         _timer?.cancel();
         
-        // Navigate to the form and pass verified number
+        // Navigate to the form and pass verified email
         if (!mounted) return;
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => FormWizardScreen(verifiedMobileNumber: phone),
+            builder: (context) => FormWizardScreen(verifiedEmail: email),
           ),
         );
       } else {
@@ -157,7 +148,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          'Mobile Verification',
+          'Email Verification',
           style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
         ),
         backgroundColor: const Color(0xFF0D47A1),
@@ -208,14 +199,14 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                                   shape: BoxShape.circle,
                                 ),
                                 child: Icon(
-                                  _isOtpSent ? Icons.sms_outlined : Icons.phone_android_outlined,
+                                  _isOtpSent ? Icons.mark_email_read_outlined : Icons.email_outlined,
                                   color: const Color(0xFF0D47A1),
                                   size: 24,
                                 ),
                               ),
                               const SizedBox(width: 14),
                               Text(
-                                _isOtpSent ? "Enter OTP Code" : "Verification Required",
+                                _isOtpSent ? "Enter Verification Code" : "Verification Required",
                                 style: const TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.bold,
@@ -230,35 +221,30 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                           
                           if (!_isOtpSent) ...[
                             const Text(
-                              "To start your PG Admission Form, please verify your mobile number first. We will send a 6-digit OTP code to this number.",
+                              "To start your PG Admission Form, please verify your email address first. We will send a 6-digit verification code to this inbox.",
                               style: TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
                             ),
                             const SizedBox(height: 24),
                             
-                            // Phone field
+                            // Email field
                             TextFormField(
-                              controller: _phoneController,
-                              keyboardType: TextInputType.phone,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                                LengthLimitingTextInputFormatter(10),
-                              ],
+                              controller: _emailController,
+                              keyboardType: TextInputType.emailAddress,
                               decoration: InputDecoration(
-                                labelText: "10-Digit Mobile Number *",
-                                hintText: "Enter mobile number",
-                                prefixText: "+91 ",
-                                prefixStyle: const TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                                labelText: "Email Address *",
+                                hintText: "Enter email address",
                                 border: OutlineInputBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                prefixIcon: const Icon(Icons.phone),
+                                prefixIcon: const Icon(Icons.email),
                               ),
                               validator: (val) {
                                 if (val == null || val.trim().isEmpty) {
-                                  return "Mobile number is required";
+                                  return "Email address is required";
                                 }
-                                if (val.trim().length < 10) {
-                                  return "Please enter a valid 10-digit number";
+                                final emailRegex = RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$");
+                                if (!emailRegex.hasMatch(val.trim())) {
+                                  return "Please enter a valid email address";
                                 }
                                 return null;
                               },
@@ -278,7 +264,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                               ),
                               child: const Center(
                                 child: Text(
-                                  "Send OTP Code",
+                                  "Send Verification Code",
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -289,7 +275,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                             ),
                           ] else ...[
                             Text(
-                              "Enter the 6-digit code sent to +91 ${_phoneController.text}.",
+                              "Enter the 6-digit code sent to ${_emailController.text}.",
                               style: const TextStyle(fontSize: 13, color: Colors.grey, height: 1.5),
                             ),
                             const SizedBox(height: 24),
@@ -351,7 +337,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                                 TextButton(
                                   onPressed: _canResend && !_isLoading ? _sendOtp : null,
                                   child: Text(
-                                    "Resend OTP",
+                                    "Resend Code",
                                     style: TextStyle(
                                       color: _canResend ? const Color(0xFF0D47A1) : Colors.grey,
                                       fontWeight: FontWeight.bold,
@@ -376,7 +362,7 @@ class _PhoneVerificationScreenState extends State<PhoneVerificationScreen> {
                               },
                               icon: const Icon(Icons.arrow_back, size: 16, color: Color(0xFF0D47A1)),
                               label: const Text(
-                                "Change Phone Number",
+                                "Change Email Address",
                                 style: TextStyle(color: Color(0xFF0D47A1), fontWeight: FontWeight.bold, fontSize: 13),
                               ),
                             ),

@@ -6,8 +6,8 @@ import '../models/admission_form.dart';
 import '../services/api_service.dart';
 
 class FormWizardScreen extends StatefulWidget {
-  final String? verifiedMobileNumber;
-  const FormWizardScreen({super.key, this.verifiedMobileNumber});
+  final String? verifiedEmail;
+  const FormWizardScreen({super.key, this.verifiedEmail});
 
   @override
   State<FormWizardScreen> createState() => _FormWizardScreenState();
@@ -50,8 +50,8 @@ class _FormWizardScreenState extends State<FormWizardScreen> {
   void initState() {
     super.initState();
     _initMarksControllers();
-    if (widget.verifiedMobileNumber != null) {
-      _mobileCtrl.text = widget.verifiedMobileNumber!;
+    if (widget.verifiedEmail != null) {
+      _emailCtrl.text = widget.verifiedEmail!;
     }
   }
 
@@ -177,8 +177,8 @@ class _FormWizardScreenState extends State<FormWizardScreen> {
       
       _aadhaarCtrl.text = "564738291012";
       _phoneCtrl.text = "08212411234";
-      _mobileCtrl.text = widget.verifiedMobileNumber ?? "9876543210";
-      _emailCtrl.text = "prajwal.np@example.com";
+      _mobileCtrl.text = "9876543210";
+      _emailCtrl.text = widget.verifiedEmail ?? "prajwal.np@example.com";
       
       _lastInstCtrl.text = "JSS College of Arts, Commerce and Science, Mysuru";
       _parentOccCtrl.text = "Agriculturist";
@@ -895,15 +895,10 @@ class _FormWizardScreenState extends State<FormWizardScreen> {
                   child: TextFormField(
                     controller: _mobileCtrl,
                     keyboardType: TextInputType.phone,
-                    readOnly: widget.verifiedMobileNumber != null,
-                    decoration: InputDecoration(
+                    decoration: const InputDecoration(
                       labelText: "Mobile Number *",
-                      border: const OutlineInputBorder(),
-                      prefixIcon: const Icon(Icons.phone_android),
-                      helperText: widget.verifiedMobileNumber != null ? "Verified Mobile Number" : null,
-                      helperStyle: widget.verifiedMobileNumber != null 
-                          ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold) 
-                          : null,
+                      border: OutlineInputBorder(),
+                      prefixIcon: Icon(Icons.phone_android),
                     ),
                   ),
                 ),
@@ -927,10 +922,15 @@ class _FormWizardScreenState extends State<FormWizardScreen> {
             TextFormField(
               controller: _emailCtrl,
               keyboardType: TextInputType.emailAddress,
-              decoration: const InputDecoration(
+              readOnly: widget.verifiedEmail != null,
+              decoration: InputDecoration(
                 labelText: "E-mail Address *",
-                border: OutlineInputBorder(),
-                prefixIcon: Icon(Icons.email),
+                border: const OutlineInputBorder(),
+                prefixIcon: const Icon(Icons.email),
+                helperText: widget.verifiedEmail != null ? "Verified E-mail Address" : null,
+                helperStyle: widget.verifiedEmail != null 
+                    ? const TextStyle(color: Colors.green, fontWeight: FontWeight.bold) 
+                    : null,
               ),
             ),
           ],

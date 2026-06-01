@@ -1,8 +1,8 @@
 /**
- * JSS College PG Admission - Google Apps Script Backend (Mobile OTP Verification - Gateway-Free)
+ * JSS College PG Admission - Google Apps Script Backend (Email OTP Verification)
  * 
  * Securely handles:
- * 1. Mobile OTP generation & verification using Google Cache Service (Free, no gateway required).
+ * 1. Email OTP generation & verification using GmailApp & Google Cache Service (100% Free).
  * 2. Admission Form data submission to Google Sheets.
  * 3. File uploads to Google Drive under student-specific folders.
  * 4. Free real-time Gmail notifications sent directly to applicants.
@@ -17,9 +17,9 @@ function doPost(e) {
     
     // Route request based on action parameter
     if (data.action === "sendOtp") {
-      return handleSendOtp(data.mobileNo);
+      return handleSendOtp(data.email);
     } else if (data.action === "verifyOtp") {
-      return handleVerifyOtp(data.mobileNo, data.otp);
+      return handleVerifyOtp(data.email, data.otp);
     } else {
       // Default: Process form submission
       return handleApplicationSubmission(data);
@@ -34,17 +34,16 @@ function doPost(e) {
 }
 
 /**
- * Generates and saves a 6-digit OTP to Google Cache Service.
- * Returns the generated OTP in the response for frontend display/bypassing.
+ * Generates and sends a 6-digit OTP to the user's email address.
  */
-function handleSendOtp(mobileNo) {
-  if (!mobileNo) {
-    return createJsonResponse("error", "Mobile number is required.");
+function handleSendOtp(email) {
+  if (!email) {
+    return createJsonResponse("error", "Email address is required.");
   }
   
-  var cleanMobile = formatIndianMobile(mobileNo);
-  if (cleanMobile.length !== 10) {
-    return createJsonResponse("error", "Please enter a valid 10-digit Indian mobile number.");
+  var cleanEmail = email.trim().toLowerCase();
+  if (!validateEmailFormat(cleanEmail)) {
+    return createJsonResponse("error", "Please enter a valid email address.");
   }
   
   // Generate 6-digit OTP code
@@ -52,36 +51,40 @@ function handleSendOtp(mobileNo) {
   
   // Save OTP in Google cache service for 10 minutes (600 seconds)
   var cache = CacheService.getScriptCache();
-  cache.put(cleanMobile, otp, 600);
+  cache.put(cleanEmail, otp, 600);
   
-  // Return success response with OTP for mock/dev usage (no SMS gateway costs or DLT KYC required)
-  return ContentService.createTextOutput(JSON.stringify({
-    "status": "success",
-    "otp": otp,
-    "message": "OTP generated successfully."
-  })).setMimeType(ContentService.MimeType.JSON);
+  // Dispatch Email
+  try {
+    sendOtpEmail(cleanEmail, otp);
+    return ContentService.createTextOutput(JSON.stringify({
+      "status": "success",
+      "message": "OTP sent successfully to your email."
+    })).setMimeType(ContentService.MimeType.JSON);
+  } catch (err) {
+    return createJsonResponse("error", "Gmail Delivery Error: " + err.toString());
+  }
 }
 
 /**
  * Verifies the OTP entered by the user. If verified, sets a validation flag in the cache.
  */
-function handleVerifyOtp(mobileNo, otp) {
-  if (!mobileNo || !otp) {
-    return createJsonResponse("error", "Mobile number and OTP code are required.");
+function handleVerifyOtp(email, otp) {
+  if (!email || !otp) {
+    return createJsonResponse("error", "Email and OTP code are required.");
   }
   
-  var cleanMobile = formatIndianMobile(mobileNo);
+  var cleanEmail = email.trim().toLowerCase();
   var cache = CacheService.getScriptCache();
-  var storedOtp = cache.get(cleanMobile);
+  var storedOtp = cache.get(cleanEmail);
   
   // Verify submitted OTP (Bypass master code '123456' allowed for testing)
   if (otp === "123456" || (storedOtp && storedOtp === otp)) {
     // Record verified status for 15 minutes (900 seconds) to allow form submission
-    cache.put(cleanMobile + "_verified", "true", 900);
+    cache.put(cleanEmail + "_verified", "true", 900);
     // Delete OTP from cache to prevent reuse
-    cache.remove(cleanMobile);
+    cache.remove(cleanEmail);
     
-    return createJsonResponse("success", "Mobile number verified successfully.");
+    return createJsonResponse("success", "Email address verified successfully.");
   } else {
     return createJsonResponse("error", "Invalid or expired OTP. Please try again.");
   }
@@ -91,14 +94,14 @@ function handleVerifyOtp(mobileNo, otp) {
  * Handles the final admission form submission, checks verification status, and sends notifications.
  */
 function handleApplicationSubmission(data) {
-  var cleanMobile = formatIndianMobile(data.mobileNo);
+  var cleanEmail = data.email ? data.email.trim().toLowerCase() : "";
   
-  // 1. Enforce Mobile verification before allowing spreadsheet insertions
+  // 1. Enforce Email verification before allowing spreadsheet insertions
   var cache = CacheService.getScriptCache();
-  var isVerified = cache.get(cleanMobile + "_verified");
+  var isVerified = cache.get(cleanEmail + "_verified");
   
   if (!isVerified || isVerified !== "true") {
-    return createJsonResponse("error", "Unauthorized: Mobile verification is incomplete. Please verify OTP first.");
+    return createJsonResponse("error", "Unauthorized: Email verification is incomplete. Please verify OTP first.");
   }
   
   // 2. Open Spreadsheet and select Sheet1
@@ -191,17 +194,17 @@ function handleApplicationSubmission(data) {
   ]);
   
   // 5. Invalidate verification cache to prevent replay
-  cache.remove(cleanMobile + "_verified");
+  cache.remove(cleanEmail + "_verified");
   
   // 6. Send Free Email Confirmation using Gmail App
   if (data.email) {
-    sendGmailNotification(data.email, data.name, uniqueId);
+    sendGmailNotification(cleanEmail, data.name, uniqueId);
   }
 
   return ContentService.createTextOutput(JSON.stringify({
     "status": "success",
     "applicationId": uniqueId,
-    "message": "Application submitted successfully! Your Application ID has been sent to your Gmail (" + data.email + ")."
+    "message": "Application submitted successfully! Your Application ID has been sent to your Gmail (" + cleanEmail + ")."
   })).setMimeType(ContentService.MimeType.JSON);
 }
 
@@ -218,6 +221,34 @@ function saveBase64File(folder, base64String, fileName, mimeType) {
   } catch (e) {
     return "Error Uploading: " + e.toString();
   }
+}
+
+/**
+ * Sends styled HTML verification OTP email confirmation.
+ */
+function sendOtpEmail(toEmail, otpValue) {
+  var subject = "Verification Code - JSS Admission Portal";
+  
+  var htmlBody = 
+    "<div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;'>" +
+      "<h2 style='color: #0D47A1; margin-top: 0;'>JSS Admissions Verification</h2>" +
+      "<p>Please verify your email address to start your PG Admission Form. Use the verification code below:</p>" +
+      "<div style='background-color: #f7fafc; padding: 20px; border-radius: 8px; text-align: center; margin: 20px 0; border: 1px solid #edf2f7;'>" +
+        "<span style='font-size: 13px; color: #718096; display: block; font-weight: bold;'>YOUR VERIFICATION CODE</span>" +
+        "<strong style='font-size: 32px; color: #0D47A1; letter-spacing: 4px;'>" + otpValue + "</strong>" +
+        "<span style='font-size: 11px; color: #a0aec0; display: block; margin-top: 8px;'>Valid for 10 minutes</span>" +
+      "</div>" +
+      "<p>If you did not request this code, you can safely ignore this email.</p>" +
+      "<br>" +
+      "<p style='margin-bottom: 0;'>Best regards,</p>" +
+      "<p style='margin-top: 4px; font-weight: bold; color: #0D47A1;'>JSS College Admissions Team</p>" +
+    "</div>";
+    
+  var textBody = "Your JSS Admission verification code is: " + otpValue + "\nValid for 10 minutes.";
+
+  GmailApp.sendEmail(toEmail, subject, textBody, {
+    htmlBody: htmlBody
+  });
 }
 
 /**
@@ -249,17 +280,11 @@ function sendGmailNotification(toEmail, studentName, applicationId) {
 }
 
 /**
- * Formats a phone number to strip "+91" prefix and leading zeros.
+ * Helper to validate email format.
  */
-function formatIndianMobile(phoneStr) {
-  var cleaned = phoneStr.replace(/\D/g, ""); // Remove non-numeric characters
-  if (cleaned.length > 10 && cleaned.substring(0, 2) === "91") {
-    cleaned = cleaned.substring(2);
-  }
-  if (cleaned.length === 11 && cleaned.charAt(0) === '0') {
-    cleaned = cleaned.substring(1);
-  }
-  return cleaned;
+function validateEmailFormat(emailStr) {
+  var emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(emailStr);
 }
 
 /**

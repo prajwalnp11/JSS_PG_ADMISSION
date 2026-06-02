@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'email_verification_screen.dart';
+import 'staff_login_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -434,6 +435,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         fontSize: 11,
                         color: Colors.grey,
                         height: 1.5,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Center(
+                    child: TextButton.icon(
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const StaffLoginScreen(),
+                          ),
+                        );
+                      },
+                      icon: const Icon(Icons.admin_panel_settings, size: 16, color: Color(0xFF0D47A1)),
+                      label: const Text(
+                        "Staff Portal Login",
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF0D47A1),
+                        ),
                       ),
                     ),
                   ),

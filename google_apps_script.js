@@ -1,11 +1,12 @@
 /**
- * JSS College PG Admission - Google Apps Script Backend (Email OTP Verification)
+ * JSS College PG Admission - Google Apps Script Backend
  * 
  * Securely handles:
- * 1. Email OTP generation & verification using GmailApp & Google Cache Service (100% Free).
+ * 1. Email OTP generation & verification using GmailApp & Google Cache Service.
  * 2. Admission Form data submission to Google Sheets.
  * 3. File uploads to Google Drive under student-specific folders.
- * 4. Free real-time Gmail notifications sent directly to applicants.
+ * 4. Staff panel queries (fetch all applications).
+ * 5. Staff review actions (approve/reject status updates in Sheets with Gmail auto-delivery).
  */
 
 var SPREADSHEET_ID = "1LczBsfFEcaLMfxM0rF0DMiBrV2M6qWuxeIZBS6OtNbY";
@@ -20,6 +21,10 @@ function doPost(e) {
       return handleSendOtp(data.email);
     } else if (data.action === "verifyOtp") {
       return handleVerifyOtp(data.email, data.otp);
+    } else if (data.action === "fetchApplications") {
+      return handleFetchApplications();
+    } else if (data.action === "updateStatus") {
+      return handleUpdateStatus(data.appId, data.status);
     } else {
       // Default: Process form submission
       return handleApplicationSubmission(data);
@@ -87,6 +92,107 @@ function handleVerifyOtp(email, otp) {
     return createJsonResponse("success", "Email address verified successfully.");
   } else {
     return createJsonResponse("error", "Invalid or expired OTP. Please try again.");
+  }
+}
+
+/**
+ * Fetches all student applications from the Google Sheet.
+ */
+function handleFetchApplications() {
+  try {
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("Sheet1");
+    
+    if (sheet.getLastRow() <= 1) {
+      return ContentService.createTextOutput(JSON.stringify({
+        "status": "success",
+        "applications": []
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    
+    var values = sheet.getDataRange().getValues();
+    var headers = values[0];
+    var applications = [];
+    
+    for (var i = 1; i < values.length; i++) {
+      var row = values[i];
+      var app = {};
+      
+      for (var col = 0; col < headers.length; col++) {
+        var header = headers[col];
+        var val = row[col];
+        
+        // Convert Date objects to ISO Strings
+        if (val instanceof Date) {
+          val = val.toISOString();
+        }
+        app[header] = val;
+      }
+      applications.push(app);
+    }
+    
+    return ContentService.createTextOutput(JSON.stringify({
+      "status": "success",
+      "applications": applications
+    })).setMimeType(ContentService.MimeType.JSON);
+    
+  } catch (error) {
+    return createJsonResponse("error", "Failed to fetch applications: " + error.toString());
+  }
+}
+
+/**
+ * Updates application status in Google Sheets and triggers automatic welcome or rejection email.
+ */
+function handleUpdateStatus(appId, newStatus) {
+  try {
+    if (!appId || !newStatus) {
+      return createJsonResponse("error", "Application ID and Status are required.");
+    }
+    
+    var ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    var sheet = ss.getSheetByName("Sheet1");
+    var values = sheet.getDataRange().getValues();
+    var headers = values[0];
+    
+    var appIdColIdx = headers.indexOf("Application ID");
+    var statusColIdx = headers.indexOf("Status");
+    var emailColIdx = headers.indexOf("Email");
+    var nameColIdx = headers.indexOf("Student Name");
+    var courseColIdx = headers.indexOf("Course Selected");
+    
+    if (appIdColIdx === -1 || statusColIdx === -1) {
+      return createJsonResponse("error", "Invalid sheet structure. Headers missing.");
+    }
+    
+    var targetRowIndex = -1;
+    for (var i = 1; i < values.length; i++) {
+      if (values[i][appIdColIdx] === appId) {
+        targetRowIndex = i;
+        break;
+      }
+    }
+    
+    if (targetRowIndex === -1) {
+      return createJsonResponse("error", "Application ID not found: " + appId);
+    }
+    
+    // Set status value in sheet (targetRowIndex + 1 because index 0 is headers, statusColIdx + 1 because it is 1-based index)
+    sheet.getRange(targetRowIndex + 1, statusColIdx + 1).setValue(newStatus);
+    
+    // Get details for email dispatch
+    var studentName = nameColIdx !== -1 ? values[targetRowIndex][nameColIdx] : "Student";
+    var studentEmail = emailColIdx !== -1 ? values[targetRowIndex][emailColIdx] : "";
+    var courseSelected = courseColIdx !== -1 ? values[targetRowIndex][courseColIdx] : "the selected program";
+    
+    if (studentEmail) {
+      sendAdmissionsReviewEmail(studentEmail.trim(), studentName.trim(), appId, courseSelected, newStatus);
+    }
+    
+    return createJsonResponse("success", "Application status updated successfully to " + newStatus);
+    
+  } catch (error) {
+    return createJsonResponse("error", "Failed to update status: " + error.toString());
   }
 }
 
@@ -190,7 +296,7 @@ function handleApplicationSubmission(data) {
     // Payment
     data.payment.refNo, data.payment.date, fileUrls["paymentReceipt"],
     
-    "Pending"
+    "Pending" // Default Application Status
   ]);
   
   // 5. Invalidate verification cache to prevent replay
@@ -273,6 +379,52 @@ function sendGmailNotification(toEmail, studentName, applicationId) {
     "</div>";
     
   var textBody = "Dear " + studentName + ",\n\nYour PG Admission Form has been submitted successfully. Your Application ID is: " + applicationId;
+
+  GmailApp.sendEmail(toEmail, subject, textBody, {
+    htmlBody: htmlBody
+  });
+}
+
+/**
+ * Sends styled HTML email update to applicant (Approve/Reject).
+ */
+function sendAdmissionsReviewEmail(toEmail, studentName, appId, courseSelected, status) {
+  var subject = "";
+  var title = "";
+  var message = "";
+  
+  if (status === "Approved") {
+    subject = "Congratulations! Admission Offer - JSS College Portal";
+    title = "Admission Offer Granted!";
+    message = 
+      "<p>Dear <strong>" + studentName + "</strong>,</p>" +
+      "<p>We are pleased to inform you that your application (ID: <strong>" + appId + "</strong>) for admission to the <strong>" + courseSelected + "</strong> program at JSS College of Arts, Commerce & Science has been **APPROVED**.</p>" +
+      "<p>To secure your seat, please complete the enrollment procedures, verify your original documents at the college admissions office, and complete the remaining fee payment within the next 7 working days.</p>";
+  } else {
+    subject = "Admission Application Status Update - JSS College Portal";
+    title = "Application Update";
+    message = 
+      "<p>Dear <strong>" + studentName + "</strong>,</p>" +
+      "<p>Thank you for your interest in JSS College of Arts, Commerce & Science and the <strong>" + courseSelected + "</strong> program.</p>" +
+      "<p>We regret to inform you that after careful review of your application (ID: <strong>" + appId + "</strong>) and academic marks, we are unable to offer you admission at this time. Your application status has been marked as **REJECTED**.</p>" +
+      "<p>This decision is typically due to limited seat intake capacities or eligibility criteria mismatch. We wish you all the best in your future academic endeavors.</p>";
+  }
+  
+  var htmlBody = 
+    "<div style='font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;'>" +
+      "<h2 style='color: " + (status === "Approved" ? "#2E7D32" : "#C62828") + "; margin-top: 0;'>" + title + "</h2>" +
+      message +
+      "<div style='background-color: #f7fafc; padding: 16px; border-radius: 8px; text-align: center; margin: 20px 0; border: 1px solid #edf2f7;'>" +
+        "<span style='font-size: 13px; color: #718096; display: block; font-weight: bold;'>APPLICATION ID</span>" +
+        "<strong style='font-size: 20px; color: #0D47A1; letter-spacing: 0.5px;'>" + appId + "</strong>" +
+      "</div>" +
+      "<p>If you have any questions or require further assistance, please contact the admissions helpdesk at pgadmissions@jsscacs.edu.in.</p>" +
+      "<br>" +
+      "<p style='margin-bottom: 0;'>Best regards,</p>" +
+      "<p style='margin-top: 4px; font-weight: bold; color: #0D47A1;'>JSS College Admissions Team</p>" +
+    "</div>";
+    
+  var textBody = "Dear " + studentName + ",\n\nYour application (ID: " + appId + ") status has been updated to: " + status;
 
   GmailApp.sendEmail(toEmail, subject, textBody, {
     htmlBody: htmlBody

@@ -163,7 +163,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.25),
+                color: Colors.white.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(10),
               ),
               child: Text(
@@ -350,7 +350,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
                                   BoxShadow(
-                                    color: Colors.black.withOpacity(0.03),
+                                    color: Colors.black.withValues(alpha: 0.03),
                                     blurRadius: 8,
                                     offset: const Offset(0, 3),
                                   ),
@@ -468,7 +468,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> with Single
       ),
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
       elevation: 0,
-      shadowColor: Colors.black.withOpacity(0.02),
+      shadowColor: Colors.black.withValues(alpha: 0.02),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: () {

@@ -187,9 +187,9 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                           decoration: BoxDecoration(
-                            color: Colors.red.withOpacity(0.15),
+                            color: Colors.red.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.red.withOpacity(0.3)),
+                            border: Border.all(color: Colors.red.withValues(alpha: 0.3)),
                           ),
                           child: Row(
                             children: [
@@ -218,12 +218,12 @@ class _StaffLoginScreenState extends State<StaffLoginScreen> {
                           color: const Color(0xFF131C2E), // Custom dark card background from screenshot
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.04),
+                            color: Colors.white.withValues(alpha: 0.04),
                             width: 1.0,
                           ),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.3),
+                              color: Colors.black.withValues(alpha: 0.3),
                               blurRadius: 20,
                               offset: const Offset(0, 10),
                             ),

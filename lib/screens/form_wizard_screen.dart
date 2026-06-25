@@ -161,65 +161,6 @@ class _FormWizardScreenState extends State<FormWizardScreen> {
     super.dispose();
   }
 
-  // Auto fill mock data for quick testing
-  void _fillMockData() {
-    setState(() {
-      _nameCtrl.text = "Prajwal N P";
-      _parentsNameCtrl.text = "Prakash & Nirmala";
-      _dobCtrl.text = "2003-05-15";
-      _placeOfBirthCtrl.text = "Mysore";
-      _religionCtrl.text = "Hindu";
-      _casteCtrl.text = "General";
-      _motherTongueCtrl.text = "Kannada";
-      
-      _presentAddressCtrl.text = "123, 4th Cross, Gokulam, Mysuru - 570002";
-      _permanentAddressCtrl.text = "123, 4th Cross, Gokulam, Mysuru - 570002";
-      
-      _aadhaarCtrl.text = "564738291012";
-      _phoneCtrl.text = "08212411234";
-      _mobileCtrl.text = "9876543210";
-      _emailCtrl.text = widget.verifiedEmail ?? "prajwal.np@example.com";
-      
-      _lastInstCtrl.text = "JSS College of Arts, Commerce and Science, Mysuru";
-      _parentOccCtrl.text = "Agriculturist";
-      _parentIncomeCtrl.text = "250000";
-
-      // Subjects
-      _subjectCtrls[0].text = "Mathematics";
-      _subjectCtrls[1].text = "Computer Science";
-      _subjectCtrls[2].text = "Physics";
-      _subjectCtrls[3].text = "Electronics";
-      _subjectCtrls[4].text = "English";
-      _subjectCtrls[5].text = "Kannada";
-
-      // Marks
-      final sems = ['sem1', 'sem2', 'sem3', 'sem4', 'sem5', 'sem6'];
-      for (var i = 0; i < sems.length; i++) {
-        _marksCtrls[sems[i]]!['total']!.text = "600";
-        _marksCtrls[sems[i]]!['secured']!.text = "${450 + (i * 10)}"; // 450, 460, 470, etc.
-      }
-
-      _payRefCtrl.text = "DU84739201";
-      _payDateCtrl.text = "2026-05-26";
-      _signatureCtrl.text = "Prajwal N P";
-
-      // Pick dummy base64 contents for files to pass validation
-      final dummyBase64 = base64Encode(utf8.encode("dummy file contents"));
-      _formData.files.forEach((key, value) {
-        value.base64 = dummyBase64;
-        value.fileName = "$key.pdf";
-        value.mimeType = "application/pdf";
-      });
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Mock Data Filled! Upload fields populated with placeholder files.'),
-        backgroundColor: Colors.blue,
-      ),
-    );
-  }
-
   // Opens date picker and sets controller text
   Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
     final DateTime? picked = await showDatePicker(
@@ -522,18 +463,6 @@ class _FormWizardScreenState extends State<FormWizardScreen> {
         ),
         backgroundColor: const Color(0xFF0D47A1),
         iconTheme: const IconThemeData(color: Colors.white),
-        actions: [
-          // Developer Quick Fill Button
-          TextButton.icon(
-            onPressed: _fillMockData,
-            icon: const Icon(Icons.flash_on, color: Colors.amber, size: 18),
-            label: const Text(
-              "Mock Data",
-              style: TextStyle(color: Colors.amber, fontWeight: FontWeight.bold, fontSize: 13),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
       ),
       body: Stack(
         children: [
@@ -682,9 +611,9 @@ class _FormWizardScreenState extends State<FormWizardScreen> {
               items: [
                 'MCA', 'M.Sc Physics', 'M.Sc Chemistry', 'M.Sc Mathematics', 
                 'M.Sc Computer Science', 'M.Sc Biochemistry', 'M.Sc Biotechnology', 
-                'M.Sc Botany', 'M.Sc Zoology', 'M.A. in Kannada', 'M.A. in English', 
-                'M.S.W', 'M.Com', 'M.Voc (Food Processing & Engineering)', 
-                'M.Voc (Software Development)'
+                'M.Sc Botany', 'M.Sc Zoology', 'M.Sc AI/ML', 'M.Sc Data Science',
+                'M.A. in Kannada', 'M.A. in English', 'M.S.W', 'M.Com', 
+                'M.Voc (Food Processing & Engineering)', 'M.Voc (Software Development)'
               ].map((c) => DropdownMenuItem(value: c, child: Text(c, style: const TextStyle(fontSize: 14)))).toList(),
               onChanged: (val) {
                 setState(() => _formData.course = val ?? 'MCA');

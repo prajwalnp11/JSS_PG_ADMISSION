@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'email_verification_screen.dart';
 import 'staff_login_screen.dart';
+import '../services/api_service.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -14,7 +15,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   bool _isSearching = false;
   String? _searchResult;
 
-  void _checkStatus() {
+  Future<void> _checkStatus() async {
     final searchVal = _searchController.text.trim();
     if (searchVal.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -28,17 +29,54 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _searchResult = null;
     });
 
-    // Simulate database lookup delay
-    Future.delayed(const Duration(seconds: 1), () {
+    try {
+      final response = await ApiService.fetchApplications();
       setState(() {
         _isSearching = false;
-        if (searchVal.toUpperCase().startsWith("JSS-")) {
-          _searchResult = "Status: Pending Verification\nApplication ID: $searchVal\nPayment: Verified (₹400)";
-        } else {
-          _searchResult = "No application found for '$searchVal'. Make sure it is in the format JSS-PG-YYYY-XXXX";
-        }
       });
-    });
+
+      if (response['status'] == 'success') {
+        final List<dynamic> apps = response['applications'] ?? [];
+        final query = searchVal.toLowerCase();
+        
+        // Find matching application by ID or Email (case-insensitive)
+        final match = apps.firstWhere(
+          (a) {
+            final appId = (a['Application ID'] ?? '').toString().toLowerCase();
+            final email = (a['Email'] ?? '').toString().toLowerCase();
+            return appId == query || email == query;
+          },
+          orElse: () => null,
+        );
+
+        setState(() {
+          if (match != null) {
+            final String studentName = (match['Student Name'] ?? 'N/A').toString();
+            final String appId = (match['Application ID'] ?? 'N/A').toString();
+            final String status = (match['Status'] ?? 'Pending').toString();
+            final String course = (match['Course Selected'] ?? 'N/A').toString();
+            final String refNo = (match['SBI Collect Ref No'] ?? 'N/A').toString();
+
+            _searchResult = "Student Name: $studentName\n"
+                            "Course Selected: $course\n"
+                            "Application ID: $appId\n"
+                            "Status: $status\n"
+                            "Payment Ref: $refNo (Verified)";
+          } else {
+            _searchResult = "No application found for '$searchVal'.\nPlease verify your Application ID or Email address.";
+          }
+        });
+      } else {
+        setState(() {
+          _searchResult = "Failed to query status: ${response['message'] ?? 'Unknown Error'}";
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _isSearching = false;
+        _searchResult = "Error connecting to server. Please try again later.";
+      });
+    }
   }
 
   @override
@@ -193,7 +231,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       _buildQuickInfoCard(
                         icon: Icons.school,
                         title: "PG Programs",
-                        value: "15+ Offered",
+                        value: "17+ Offered",
                         color: const Color(0xFFE65100),
                       ),
                     ],
@@ -269,10 +307,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           const SizedBox(height: 6),
                           const Text(
-                            "• M.Sc (Physics, Chemistry, Maths, CS, BioTech, Botany)\n"
+                            "• M.Sc (Physics, Chemistry, Maths, CS, BioTech, Botany, Biochemistry, Zoology, AI/ML, Data Science)\n"
                             "• MCA (Master of Computer Applications)\n"
                             "• M.Com, M.S.W, M.A (English, Kannada)\n"
-                            "• M.Voc (Software Development, Food Processing)",
+                            "• M.Voc (Software Development, Food Processing & Engineering)",
                             style: TextStyle(fontSize: 12, color: Color(0xFF455A64), height: 1.5),
                           ),
                           const SizedBox(height: 24),

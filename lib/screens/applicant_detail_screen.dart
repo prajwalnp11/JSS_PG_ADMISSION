@@ -140,13 +140,13 @@ class _ApplicantDetailScreenState extends State<ApplicantDetailScreen> {
     final status = _normalizeStatus(_app['Status']);
 
     Color statusColor = Colors.amber;
-    Color statusBg = Colors.amber.withOpacity(0.15);
+    Color statusBg = Colors.amber.withValues(alpha: 0.15);
     if (status == 'approved') {
       statusColor = Colors.green;
-      statusBg = Colors.green.withOpacity(0.15);
+      statusBg = Colors.green.withValues(alpha: 0.15);
     } else if (status == 'rejected') {
       statusColor = Colors.redAccent;
-      statusBg = Colors.redAccent.withOpacity(0.15);
+      statusBg = Colors.redAccent.withValues(alpha: 0.15);
     }
 
     return Scaffold(
@@ -254,7 +254,7 @@ class _ApplicantDetailScreenState extends State<ApplicantDetailScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: Colors.white.withOpacity(0.06)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.06)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -341,7 +341,7 @@ class _ApplicantDetailScreenState extends State<ApplicantDetailScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF1E293B),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withOpacity(0.05)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.05)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -517,7 +517,7 @@ class _ApplicantDetailScreenState extends State<ApplicantDetailScreen> {
       decoration: BoxDecoration(
         color: const Color(0xFF0F172A),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.white.withOpacity(0.04)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.04)),
       ),
       padding: const EdgeInsets.all(8),
       child: Column(
@@ -637,7 +637,7 @@ class _ApplicantDetailScreenState extends State<ApplicantDetailScreen> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.redAccent.withOpacity(0.9),
+              backgroundColor: Colors.redAccent.withValues(alpha: 0.9),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(
@@ -657,7 +657,7 @@ class _ApplicantDetailScreenState extends State<ApplicantDetailScreen> {
               style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.withOpacity(0.9),
+              backgroundColor: Colors.green.withValues(alpha: 0.9),
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(

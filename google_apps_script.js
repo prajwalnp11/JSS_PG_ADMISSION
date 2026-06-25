@@ -82,8 +82,8 @@ function handleVerifyOtp(email, otp) {
   var cache = CacheService.getScriptCache();
   var storedOtp = cache.get(cleanEmail);
   
-  // Verify submitted OTP (Bypass master code '123456' allowed for testing)
-  if (otp === "123456" || (storedOtp && storedOtp === otp)) {
+  // Verify submitted OTP
+  if (storedOtp && storedOtp === otp) {
     // Record verified status for 15 minutes (900 seconds) to allow form submission
     cache.put(cleanEmail + "_verified", "true", 900);
     // Delete OTP from cache to prevent reuse
